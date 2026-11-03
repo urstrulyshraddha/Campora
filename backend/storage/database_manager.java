@@ -5,21 +5,28 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class database_manager {
-    // Standard MySQL JDBC connection URL for localhost on default port 3306
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/campora_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = ""; // Empty password set during --initialize-insecure
-
-    static {
-        try {
-            // Explicitly load the MySQL JDBC driver
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            System.err.println("[Database Error] MySQL Driver not found in classpath: " + e.getMessage());
-        }
-    }
+    // Local fallback defaults
+    private static final String DEFAULT_URL = "jdbc:mysql://localhost:3306/campora_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC";
+    private static final String DEFAULT_USER = "root";
+    private static final String DEFAULT_PASS = "1234";
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        String dbUrl = System.getenv("DB_URL");
+        String dbUser = System.getenv("DB_USER");
+        String dbPass = System.getenv("DB_PASS");
+
+        if (dbUrl == null || dbUrl.trim().isEmpty()) {
+            dbUrl = DEFAULT_URL;
+            dbUser = DEFAULT_USER;
+            dbPass = DEFAULT_PASS;
+        }
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            System.err.println("[JDBC Warning] Driver not found: " + e.getMessage());
+        }
+
+        return DriverManager.getConnection(dbUrl, dbUser, dbPass);
     }
 }
