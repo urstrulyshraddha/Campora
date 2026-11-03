@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin & Developer Console | Campora</title>
 
+  <!-- Open Graph Meta Tags (For rich previews on WhatsApp, Instagram, etc.) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://urstrulyshraddha.github.io/campora/" />
+  <meta property="og:title" content="Campora — Admin & Developer Console" />
+  <meta property="og:description" content="View live thread diagnostics, inspect relational snapshot backups, and audit atomic system state." />
+  <meta property="og:image" content="https://urstrulyshraddha.github.io/campora/assets/preview.png" />
+
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:title" content="Campora — Admin & Developer Console" />
+  <meta property="twitter:description" content="View live thread diagnostics, inspect relational snapshot backups, and audit atomic system state." />
+  <meta property="twitter:image" content="https://urstrulyshraddha.github.io/campora/assets/preview.png" />
+
+  <!-- Favicon Brand Badge -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23f59e0b'/><path d='M9 16.5l4.5 4.5 9.5-9.5' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="css/style.css" />
@@ -32,6 +47,7 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-purple-200 selection:text-purple-900">
 
+  <!-- Header -->
   <header class="border-b border-pastel-border bg-white/80 sticky top-0 z-30 backdrop-blur-md">
     <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -47,13 +63,42 @@
         </div>
       </div>
 
-      <span class="text-xs font-mono px-3 py-1 bg-sky-50 text-sky-700 border border-sky-200 rounded-lg">
-        DBMS: MySQL 8.4 via JDBC
-      </span>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-mono px-3 py-1 bg-sky-50 text-sky-700 border border-sky-200 rounded-lg">
+          DBMS: MySQL 8.4 via JDBC
+        </span>
+        <button id="adminLockBtn" class="text-xs text-neutral-500 hover:text-rose-600 transition flex items-center gap-1.5 ml-3" title="Lock Console">
+          <i data-lucide="lock" class="w-3.5 h-3.5"></i> Lock
+        </button>
+      </div>
     </div>
   </header>
 
+  <!-- Access Protected Container -->
   <main class="max-w-6xl w-full mx-auto px-6 py-8 space-y-6 flex-1">
+
+    <!-- Admin Authentication Gate -->
+    <div id="adminAuthGate" class="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white border border-pastel-border rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-4">
+          <i data-lucide="shield-check" class="w-6 h-6"></i>
+        </div>
+        <h2 class="text-base font-bold text-pastel-text">Administrator Access</h2>
+        <p class="text-xs text-neutral-500 mt-1">Restricted to System Administrators & Developers.</p>
+
+        <form id="adminPasscodeForm" class="mt-5 space-y-3">
+          <input type="password" id="adminPasscodeInput" placeholder="Enter root passcode (admin@campora2026)" required
+            class="w-full bg-pastel-subtle border border-pastel-border rounded-xl px-3.5 py-2 text-xs text-pastel-text focus:outline-none focus:border-sky-500" />
+          <span id="adminPasscodeError" class="text-xs text-rose-500 hidden block">Invalid authorization key.</span>
+
+          <button type="submit" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-xl shadow-sm transition">
+            Authenticate Session
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Diagnostic Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
       <div class="bg-white border border-pastel-border rounded-3xl p-6 shadow-xs space-y-2">
@@ -98,22 +143,57 @@
   </main>
 
   <script>
-      lucide.createIcons();
+    lucide.createIcons();
 
-      const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-        ? "http://localhost:8080/api"
-        : "https://campora-h0sy.onrender.com/api";
+    const ADMIN_PASSCODE = "admin@campora2026";
+    const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+      ? "http://localhost:8080/api"
+      : "https://campora-h0sy.onrender.com/api";
 
-      async function fetchRawData() {
-        try {
-          const res = await fetch(`${API_BASE}/reports`);
-          const data = await res.json();
-          document.getElementById("rawJsonBlock").textContent = JSON.stringify(data, null, 2);
-        } catch (err) {
-          document.getElementById("rawJsonBlock").textContent = "Could not fetch API. Java backend offline.";
-        }
+    // Authentication Guard & Initialization
+    document.addEventListener("DOMContentLoaded", () => {
+      if (sessionStorage.getItem("campora_admin_auth") === "true") {
+        document.getElementById("adminAuthGate").classList.add("hidden");
+        fetchRawData();
       }
-      fetchRawData();
-    </script>
+      setupAdminAuth();
+    });
+
+    function setupAdminAuth() {
+      const form = document.getElementById("adminPasscodeForm");
+      const input = document.getElementById("adminPasscodeInput");
+      const err = document.getElementById("adminPasscodeError");
+      const gate = document.getElementById("adminAuthGate");
+      const lockBtn = document.getElementById("adminLockBtn");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (input.value.trim() === ADMIN_PASSCODE) {
+          sessionStorage.setItem("campora_admin_auth", "true");
+          gate.classList.add("hidden");
+          fetchRawData();
+        } else {
+          err.classList.remove("hidden");
+        }
+      });
+
+      if (lockBtn) {
+        lockBtn.addEventListener("click", () => {
+          sessionStorage.removeItem("campora_admin_auth");
+          window.location.href = "../index.html";
+        });
+      }
+    }
+
+    async function fetchRawData() {
+      try {
+        const res = await fetch(`${API_BASE}/reports`);
+        const data = await res.json();
+        document.getElementById("rawJsonBlock").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("rawJsonBlock").textContent = "Could not fetch API. Java backend offline or unreachable.";
+      }
+    }
+  </script>
 </body>
 </html>
