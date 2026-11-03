@@ -1,4 +1,7 @@
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  ? "http://localhost:8080/api"
+  : "https://campora-h0sy.onrender.com/api";
+
 let currentFilter = "all";
 let cachedReports = [];
 let chartInstance = null;
