@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin & Developer Console | Campora</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/style.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pastel: {
+              bg: '#f8f7fc',
+              surface: '#ffffff',
+              border: '#e9e4f5',
+              subtle: '#f3f0fa',
+              text: '#1e1b4b',
+              purple: '#7c3aed',
+              purpleHover: '#6d28d9',
+              purpleLight: '#ede9fe'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-purple-200 selection:text-purple-900">
+
+  <header class="border-b border-pastel-border bg-white/80 sticky top-0 z-30 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="../index.html" class="p-2 rounded-xl hover:bg-pastel-subtle text-neutral-600 transition">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+        <div class="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white shadow-sm shadow-sky-200">
+          <i data-lucide="terminal" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <span class="font-bold text-sm tracking-tight text-pastel-text">CAMPORA</span>
+          <span class="text-[10px] text-sky-600 block -mt-0.5 font-mono">Developer & Diagnostics Console</span>
+        </div>
+      </div>
+
+      <span class="text-xs font-mono px-3 py-1 bg-sky-50 text-sky-700 border border-sky-200 rounded-lg">
+        DBMS: MySQL 8.4 via JDBC
+      </span>
+    </div>
+  </header>
+
+  <main class="max-w-6xl w-full mx-auto px-6 py-8 space-y-6 flex-1">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <div class="bg-white border border-pastel-border rounded-3xl p-6 shadow-xs space-y-2">
+        <span class="text-xs font-mono text-neutral-400 uppercase">Concurrency Architecture</span>
+        <h4 class="text-base font-bold text-pastel-text">10-Thread Worker Pool</h4>
+        <p class="text-xs text-neutral-500 leading-relaxed">
+          Driven by Java's native <code>Executors.newFixedThreadPool(10)</code> handling asynchronous client requests.
+        </p>
+      </div>
+
+      <div class="bg-white border border-pastel-border rounded-3xl p-6 shadow-xs space-y-2">
+        <span class="text-xs font-mono text-neutral-400 uppercase">Persistence Guard</span>
+        <h4 class="text-base font-bold text-pastel-text">Scheduled Daemon Worker</h4>
+        <p class="text-xs text-neutral-500 leading-relaxed">
+          60-second periodic serialization loop flushing relational state to <code>reports_snapshot.json</code>.
+        </p>
+      </div>
+
+      <div class="bg-white border border-pastel-border rounded-3xl p-6 shadow-xs space-y-2">
+        <span class="text-xs font-mono text-neutral-400 uppercase">Lock-Free Mutation</span>
+        <h4 class="text-base font-bold text-pastel-text">AtomicInteger Endorsements</h4>
+        <p class="text-xs text-neutral-500 leading-relaxed">
+          Ensures race conditions and concurrent student upvotes never lose count under load.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Raw JSON Inspector -->
+    <div class="bg-white border border-pastel-border rounded-3xl p-6 shadow-xs space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-pastel-text flex items-center gap-2">
+          <i data-lucide="database" class="w-4 h-4 text-sky-600"></i>
+          <span>Live Relational Data Feed (JSON API Mirror)</span>
+        </h3>
+        <button onclick="fetchRawData()" class="text-xs text-sky-600 hover:text-sky-800 font-semibold">
+          Refresh Raw Payload
+        </button>
+      </div>
+      <pre id="rawJsonBlock" class="p-4 bg-pastel-subtle border border-pastel-border rounded-2xl text-[11px] font-mono text-neutral-700 overflow-x-auto max-h-96">Loading raw database snapshot...</pre>
+    </div>
+  </main>
+
+  <script>
+    lucide.createIcons();
+    async function fetchRawData() {
+      try {
+        const res = await fetch("http://localhost:8080/api/reports");
+        const data = await res.json();
+        document.getElementById("rawJsonBlock").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("rawJsonBlock").textContent = "Could not fetch API. Java backend offline.";
+      }
+    }
+    fetchRawData();
+  </script>
+</body>
+</html>

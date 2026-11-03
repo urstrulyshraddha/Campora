@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student & Faculty Portal | Campora</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js for Visual Analysis -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pastel: {
+              bg: '#f8f7fc',
+              surface: '#ffffff',
+              border: '#e9e4f5',
+              subtle: '#f3f0fa',
+              text: '#1e1b4b',
+              purple: '#7c3aed',
+              purpleHover: '#6d28d9',
+              purpleLight: '#ede9fe'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-purple-200 selection:text-purple-900">
+
+  <!-- Header -->
+  <header class="border-b border-pastel-border bg-white/80 sticky top-0 z-30 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="../index.html" class="p-2 rounded-xl hover:bg-pastel-subtle text-neutral-600 transition" title="Back to Portal Selection">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+        <div class="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center text-white shadow-sm shadow-purple-200">
+          <i data-lucide="users" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <span class="font-bold text-sm tracking-tight text-pastel-text">CAMPORA</span>
+          <span class="text-[10px] text-purple-600 block -mt-0.5 font-mono">Student & Faculty Workspace</span>
+        </div>
+      </div>
+
+      <button id="openSubmitModalBtn" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl shadow-sm shadow-purple-200 transition flex items-center gap-1.5">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        <span>Log Grievance</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl w-full mx-auto px-6 py-8 space-y-8 flex-1">
+
+    <!-- Section 1: Visual Analytics & Graph Analysis -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Visual Doughnut Chart -->
+      <div class="bg-white border border-pastel-border rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold text-pastel-text flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-purple-600"></i>
+              <span>Resolution Progress</span>
+            </h3>
+            <span class="text-[10px] font-mono text-neutral-400">Live Breakdown</span>
+          </div>
+          <p class="text-xs text-neutral-500">Visual ratio of pending, active, and completed campus issues.</p>
+        </div>
+        <div class="relative w-44 h-44 mx-auto my-3">
+          <canvas id="resolutionChart"></canvas>
+        </div>
+        <div class="flex justify-around text-center pt-2 border-t border-purple-50 text-xs font-mono">
+          <div><span class="block text-amber-600 font-bold" id="legendPending">0</span><span class="text-[10px] text-neutral-400">Pending</span></div>
+          <div><span class="block text-purple-600 font-bold" id="legendProgress">0</span><span class="text-[10px] text-neutral-400">Progress</span></div>
+          <div><span class="block text-emerald-600 font-bold" id="legendResolved">0</span><span class="text-[10px] text-neutral-400">Resolved</span></div>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="md:col-span-2 grid grid-cols-2 gap-4">
+        <div class="bg-white border border-pastel-border rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Total Grievances Filed</span>
+          <div id="statTotal" class="text-3xl font-extrabold font-mono text-pastel-text my-2">-</div>
+          <span class="text-[11px] text-neutral-500">Tracked across all university facilities.</span>
+        </div>
+        <div class="bg-white border border-rose-100 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-rose-500 flex items-center justify-between">
+            <span>Safety Alerts</span>
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+          </span>
+          <div id="statSafety" class="text-3xl font-extrabold font-mono text-rose-600 my-2">-</div>
+          <span class="text-[11px] text-rose-500/80">High urgency priority dispatch.</span>
+        </div>
+        <div class="bg-white border border-amber-100 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-amber-600 flex items-center justify-between">
+            <span>Campus Facilities</span>
+            <i data-lucide="wrench" class="w-4 h-4"></i>
+          </span>
+          <div id="statManagement" class="text-3xl font-extrabold font-mono text-amber-700 my-2">-</div>
+          <span class="text-[11px] text-neutral-500">Hostel, Wi-Fi, HVAC, Water.</span>
+        </div>
+        <div class="bg-white border border-emerald-100 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-600 flex items-center justify-between">
+            <span>Resolved Tickets</span>
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+          </span>
+          <div id="statResolved" class="text-3xl font-extrabold font-mono text-emerald-700 my-2">-</div>
+          <span class="text-[11px] text-emerald-600/80">Closed with resolution proof logs.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Campus Feed & Filter -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex flex-wrap gap-2 text-xs font-medium">
+          <button data-filter="all" class="filter-pill px-4 py-2 rounded-xl border border-purple-300 bg-purple-100/70 text-purple-900 font-semibold shadow-xs">
+            All Tracks
+          </button>
+          <button data-filter="safety" class="filter-pill px-4 py-2 rounded-xl border border-pastel-border bg-white text-neutral-600 hover:border-purple-300">
+            Safety Hazards
+          </button>
+          <button data-filter="management" class="filter-pill px-4 py-2 rounded-xl border border-pastel-border bg-white text-neutral-600 hover:border-purple-300">
+            Facilities Management
+          </button>
+          <button data-filter="suggestion" class="filter-pill px-4 py-2 rounded-xl border border-pastel-border bg-white text-neutral-600 hover:border-purple-300">
+            Suggestions & Ideas
+          </button>
+        </div>
+        <span class="text-xs text-neutral-400 font-mono" id="feedCount">Showing active tickets</span>
+      </div>
+
+      <!-- Feed Container -->
+      <div id="reportsFeed" class="space-y-4"></div>
+    </section>
+  </main>
+
+  <!-- Submit Modal -->
+  <div id="submitModal" class="fixed inset-0 modal-backdrop hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white border border-purple-100 rounded-3xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 border-b border-pastel-border">
+        <h3 class="text-base font-bold text-pastel-text flex items-center gap-2">
+          <i data-lucide="file-plus" class="w-5 h-5 text-purple-600"></i>
+          <span>Log Grievance or Suggestion</span>
+        </h3>
+        <button id="closeSubmitModalBtn" class="text-neutral-400 hover:text-neutral-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="newReportForm" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-neutral-700 mb-1">Select Track</label>
+          <select id="reportDomain" class="w-full bg-pastel-subtle border border-pastel-border rounded-xl px-3 py-2 text-xs text-pastel-text focus:outline-none focus:border-purple-500">
+            <option value="safety">Safety & Emergency Alert</option>
+            <option value="management" selected>Campus & Facilities Management</option>
+            <option value="suggestion">Student / Faculty Suggestion</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-neutral-700 mb-1">Title / Short Summary</label>
+          <input type="text" id="reportTitle" required placeholder="e.g., Water cooler filter red on 2nd Floor"
+            class="w-full bg-pastel-subtle border border-pastel-border rounded-xl px-3 py-2 text-xs text-pastel-text placeholder-neutral-400 focus:outline-none focus:border-purple-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-neutral-700 mb-1">Location</label>
+            <input type="text" id="reportLocation" required placeholder="e.g., Block C - 3rd floor"
+              class="w-full bg-pastel-subtle border border-pastel-border rounded-xl px-3 py-2 text-xs text-pastel-text placeholder-neutral-400 focus:outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label id="categoryLabel" class="block text-xs font-medium text-neutral-700 mb-1">Department</label>
+            <input type="text" id="reportCategory" placeholder="e.g., Facilities / Electrical"
+              class="w-full bg-pastel-subtle border border-pastel-border rounded-xl px-3 py-2 text-xs text-pastel-text placeholder-neutral-400 focus:outline-none focus:border-purple-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-neutral-700 mb-1">Description</label>
+          <textarea id="reportDescription" rows="3" required placeholder="Describe what is wrong, frequency, or recommendations..."
+            class="w-full bg-pastel-subtle border border-pastel-border rounded-xl px-3 py-2 text-xs text-pastel-text placeholder-neutral-400 focus:outline-none focus:border-purple-500"></textarea>
+        </div>
+
+        <!-- Anonymity Section -->
+        <div class="p-4 bg-pastel-subtle border border-pastel-border rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-semibold text-pastel-text flex items-center gap-1.5">
+                <i data-lucide="eye-off" class="w-3.5 h-3.5 text-purple-600"></i> Submit Anonymously
+              </span>
+              <span class="text-[11px] text-neutral-500">Your identity will remain completely obscured.</span>
+            </div>
+            <input type="checkbox" id="anonCheckbox" checked class="w-4 h-4 accent-purple-600 rounded cursor-pointer" />
+          </div>
+
+          <!-- Revealed if Unchecked -->
+          <div id="publicIdentityFields" class="hidden pt-3 border-t border-purple-200/50 space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] text-neutral-600 mb-1">Affiliation</label>
+                <select id="reporterType" class="w-full bg-white border border-pastel-border rounded-xl px-2.5 py-1.5 text-xs text-pastel-text">
+                  <option value="STUDENT">Student</option>
+                  <option value="FACULTY">Faculty Member</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] text-neutral-600 mb-1">Your Name / ID</label>
+                <input type="text" id="reporterIdentity" placeholder="e.g., AP221100..."
+                  class="w-full bg-white border border-pastel-border rounded-xl px-2.5 py-1.5 text-xs text-pastel-text" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl shadow-sm shadow-purple-200 transition">
+          Publish Incident Report
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/student.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg-primary: #f8f7fc;        /* Soft tinted background, not harsh stark white */
+  --bg-surface: #ffffff;        /* Pure card surfaces */
+  --bg-subtle: #f3f0fa;         /* Subtle lilac tint */
+  --border-muted: #e9e4f5;      /* Soft lavender border */
+  --accent-purple: #7c3aed;     /* Primary aesthetic purple */
+  --accent-purple-hover: #6d28d9;
+  --accent-purple-light: #ede9fe;
+  --text-main: #1e1b4b;         /* Deepest midnight purple for readable text */
+  --text-muted: #6b7280;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom scrollbars matching pastel palette */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: #ddd6fe;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c4b5fd;
+}
+
+/* Modal backdrop blur */
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  background-color: rgba(30, 27, 75, 0.35);
+}

@@ -1,0 +1,5 @@
+bin/
+*.class
+reports_snapshot.json
+.vscode/
+.idea/
