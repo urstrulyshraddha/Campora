@@ -19,6 +19,12 @@ public class database_manager {
             dbUrl = DEFAULT_URL;
             dbUser = DEFAULT_USER;
             dbPass = DEFAULT_PASS;
+        } else {
+            dbUrl = dbUrl.trim();
+            // Automatically normalize if mysql:// was passed instead of jdbc:mysql://
+            if (dbUrl.startsWith("mysql://")) {
+                dbUrl = "jdbc:" + dbUrl;
+            }
         }
 
         try {

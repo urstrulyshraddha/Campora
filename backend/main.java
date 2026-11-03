@@ -49,44 +49,51 @@ public class main {
         System.out.println("  Frontend & Terminal CLI simultaneously operational");
         System.out.println("==========================================================\n");
 
-        // 3. Two-Portal Console Navigation for Terminal
-        runPortalMenu();
-
-        server.stop(0);
-        System.out.println("\n[Server Terminated. Goodbye!]");
+        // 3. Keep-alive check: Interactive terminal locally, or daemon hold in cloud
+        if (System.console() != null) {
+            runPortalMenu();
+            server.stop(0);
+            System.out.println("\n[Server Terminated. Goodbye!]");
+        } else {
+            System.out.println("[Headless Server Mode Active - Listening for HTTP Requests]");
+            try {
+                Thread.currentThread().join();
+            } catch (InterruptedException e) {
+                System.out.println("[Server Interrupted]");
+            }
+        }
     }
 
     // -------------------------------------------------------------------------
     // CONSOLE / TERMINAL MENU SYSTEM
     // -------------------------------------------------------------------------
     private static void runPortalMenu() {
-            Scanner scanner = new Scanner(System.in);
-            try {
-                while (scanner.hasNextLine()) {
-                    System.out.println("\n==============================================");
-                    System.out.println("         WELCOME TO CAMPORA PORTAL            ");
-                    System.out.println("==============================================");
-                    System.out.println("Select your role / action:");
-                    System.out.println("  1. Submit Feedback / Report (Student / Faculty)");
-                    System.out.println("  2. Resolve Issues (Management / Facilities)");
-                    System.out.println("  3. Exit Application");
-                    System.out.print("Enter choice (1-3): ");
+        Scanner scanner = new Scanner(System.in);
+        try {
+            while (scanner.hasNextLine()) {
+                System.out.println("\n==============================================");
+                System.out.println("         WELCOME TO CAMPORA PORTAL            ");
+                System.out.println("==============================================");
+                System.out.println("Select your role / action:");
+                System.out.println("  1. Submit Feedback / Report (Student / Faculty)");
+                System.out.println("  2. Resolve Issues (Management / Facilities)");
+                System.out.println("  3. Exit Application");
+                System.out.print("Enter choice (1-3): ");
 
-                    String roleChoice = scanner.nextLine().trim();
+                String roleChoice = scanner.nextLine().trim();
 
-                    if ("1".equals(roleChoice)) {
-                        runStudentFacultyPortal(scanner);
-                    } else if ("2".equals(roleChoice)) {
-                        runManagementPortal(scanner);
-                    } else if ("3".equals(roleChoice)) {
-                        break;
-                    }
+                if ("1".equals(roleChoice)) {
+                    runStudentFacultyPortal(scanner);
+                } else if ("2".equals(roleChoice)) {
+                    runManagementPortal(scanner);
+                } else if ("3".equals(roleChoice)) {
+                    break;
                 }
-            } catch (Exception e) {
-                // Scanner stream closed or detached - keep HTTP server active
-                System.out.println("[Terminal Menu Paused. Web API listening on port " + PORT + "]");
             }
+        } catch (Exception e) {
+            System.out.println("[Terminal Menu Paused. Web API listening on port " + PORT + "]");
         }
+    }
 
     private static void runStudentFacultyPortal(Scanner scanner) {
         report_repository repo = report_repository.getInstance();
@@ -361,7 +368,6 @@ public class main {
     // HTTP REST API HANDLERS (FOR FRONTEND WEB PORTAL)
     // -------------------------------------------------------------------------
 
-    // Handles GET /api/reports and POST /api/reports
     static class ReportHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -430,56 +436,52 @@ public class main {
         }
     }
 
-    // Handles POST /api/resolve
-    // Handles POST /api/resolve
-    // Handles POST /api/resolve
-        static class ResolveHandler implements HttpHandler {
-            @Override
-            public void handle(HttpExchange exchange) throws IOException {
-                if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
-                    sendCORSPreflight(exchange);
-                    return;
+    static class ResolveHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendCORSPreflight(exchange);
+                return;
+            }
+
+            setCORSHeaders(exchange);
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = readBody(exchange);
+                Map<String, String> data = extractJsonFields(body);
+
+                String query = exchange.getRequestURI().getQuery();
+                String id = data.get("id");
+                String status = data.get("status");
+                String note = data.getOrDefault("note", "");
+
+                if (id == null && query != null && query.contains("id=")) {
+                    id = query.split("id=")[1].split("&")[0];
+                }
+                if (status == null && query != null && query.contains("status=")) {
+                    status = query.split("status=")[1].split("&")[0];
                 }
 
-                setCORSHeaders(exchange);
-                if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                    String body = readBody(exchange);
-                    Map<String, String> data = extractJsonFields(body);
+                System.out.println("[ResolveHandler] Received update for ID: '" + id + "' -> Status: '" + status + "'");
 
-                    String query = exchange.getRequestURI().getQuery();
-                    String id = data.get("id");
-                    String status = data.get("status");
-                    String note = data.getOrDefault("note", "");
-
-                    if (id == null && query != null && query.contains("id=")) {
-                        id = query.split("id=")[1].split("&")[0];
+                if (id != null && !id.trim().isEmpty() && status != null && !status.trim().isEmpty()) {
+                    boolean ok = report_repository.getInstance().updateStatus(id.trim(), status.trim(), note.trim());
+                    if (ok) {
+                        System.out.println("[ResolveHandler] Successfully updated ID: " + id);
+                        sendResponse(exchange, 200, "{\"status\":\"success\",\"newStatus\":\"" + status + "\"}");
+                        return;
+                    } else {
+                        System.err.println("[ResolveHandler] Failed to update DB for ID: " + id);
+                        sendResponse(exchange, 404, "{\"error\":\"Ticket ID '" + id + "' does not exist in the database.\"}");
+                        return;
                     }
-                    if (status == null && query != null && query.contains("status=")) {
-                        status = query.split("status=")[1].split("&")[0];
-                    }
-
-                    System.out.println("[ResolveHandler] Received update for ID: '" + id + "' -> Status: '" + status + "'");
-
-                    if (id != null && !id.trim().isEmpty() && status != null && !status.trim().isEmpty()) {
-                        boolean ok = report_repository.getInstance().updateStatus(id.trim(), status.trim(), note.trim());
-                        if (ok) {
-                            System.out.println("[ResolveHandler] Successfully updated ID: " + id);
-                            sendResponse(exchange, 200, "{\"status\":\"success\",\"newStatus\":\"" + status + "\"}");
-                            return;
-                        } else {
-                            System.err.println("[ResolveHandler] Failed to update DB for ID: " + id);
-                            sendResponse(exchange, 404, "{\"error\":\"Ticket ID '" + id + "' does not exist in the database.\"}");
-                            return;
-                        }
-                    }
-                    sendResponse(exchange, 400, "{\"error\":\"Missing required 'id' or 'status' field.\"}");
-                } else {
-                    sendResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
                 }
+                sendResponse(exchange, 400, "{\"error\":\"Missing required 'id' or 'status' field.\"}");
+            } else {
+                sendResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
             }
         }
+    }
 
-    // Handles POST /api/endorse?id=XXXX
     static class EndorseHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -502,7 +504,6 @@ public class main {
         }
     }
 
-    // Handles POST /api/comment?id=XXXX
     static class CommentHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -531,7 +532,6 @@ public class main {
         }
     }
 
-    // Handles GET /api/stats
     static class StatsHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -587,7 +587,6 @@ public class main {
         }
     }
 
-    // Robust JSON key-value extractor using regex (supports commas, colons, and newlines in values)
     private static Map<String, String> extractJsonFields(String json) {
         Map<String, String> map = new HashMap<>();
         if (json == null || json.trim().isEmpty()) return map;
